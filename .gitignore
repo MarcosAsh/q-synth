@@ -1,0 +1,7 @@
+build/
+out/
+compile_commands.json
+*.o
+*.csv
+!data/*.csv
+data/creditcard.csv
