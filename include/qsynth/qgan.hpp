@@ -96,7 +96,7 @@ inline TrainHistory train_qgan(IGenerator &gen, const Matrix &real,
                 }
             }
 
-            // ---- Discriminator step ----------------------------------------
+            // Discriminator step.
             disc.set_dropout(cfg.dropout);
             double d_loss = 0.0;
             for (int i = 0; i < B; ++i) {
@@ -126,7 +126,7 @@ inline TrainHistory train_qgan(IGenerator &gen, const Matrix &real,
             disc.apply_grads(1.0 / B);
             ep_d += d_loss / (2.0 * B);
 
-            // ---- Generator step --------------------------------------------
+            // Generator step.
             gen.begin_batch();
             std::vector<Vec> xhat(B, Vec(d));
             for (int i = 0; i < B; ++i) {
@@ -227,7 +227,7 @@ inline TrainHistory train_qgan(IGenerator &gen, const Matrix &real,
         hist.g_loss.push_back(ep_g / std::max(1, steps));
         hist.d_loss.push_back(ep_d / std::max(1, steps));
 
-        // ---- Adaptive regularization at checkpoints ------------------------
+        // Adaptive regularization at checkpoints.
         if ((epoch + 1) % cfg.eval_every == 0) {
             disc.set_dropout(0.0);
             double dr = 0.0, df = 0.0;
@@ -260,7 +260,7 @@ inline TrainHistory train_qgan(IGenerator &gen, const Matrix &real,
     return hist;
 }
 
-// --- small helpers kept out of the main loop for readability --------------
+// Small helpers kept out of the main loop for readability.
 inline Vec xb_row(const Matrix &m, int r, int d)
 {
     Vec v(d);

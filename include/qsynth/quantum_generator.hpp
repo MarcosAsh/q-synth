@@ -62,7 +62,7 @@ public:
     int latent_dim() const override { return m_; }
     int n_qubits() const { return d_; }
 
-    // ---- IGenerator batch interface -------------------------------------
+    // IGenerator batch interface.
     void begin_batch() override { caches_.clear(); }
 
     Vec forward_cached(const Vec &z) override

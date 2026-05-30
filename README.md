@@ -81,6 +81,6 @@ This is a faithful reimplementation of the methodology, not a bit-for-bit
 reproduction of the paper's tables. Differences by design: gradients of the
 circuit angles use central finite differences on the noiseless simulator rather
 than PennyLane autodiff; the downstream classifier suite is LogReg + ANN (the
-paper also reports a QNN, random forest, and XGBoost); and without the Kaggle
+paper also reports a QNN, random forest, and XGBoost). And without the Kaggle
 CSV the data is synthetic. The quantum generator shares one angle matrix across
 all variational layers, exactly as specified in the paper.

@@ -22,7 +22,6 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
-#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -127,7 +126,7 @@ int main(int argc, char **argv)
     Args args = parse_args(argc, argv);
     Rng rng(args.seed);
 
-    // ---- 1. Load or synthesize data -------------------------------------
+    // Load the dataset, or synthesize one when no CSV is given.
     Dataset ds;
     bool loaded = false;
     if (!args.force_synth && !args.data.empty()) {
@@ -145,7 +144,7 @@ int main(int argc, char **argv)
                 100.0 * ds.n_fraud / static_cast<double>(ds.X.rows),
                 ds.synthetic ? " [synthetic]" : "");
 
-    // ---- 2. Preprocess ---------------------------------------------------
+    // Preprocess into the bounded representation space.
     Preprocessor pp = fit_preprocess(ds.X, ds.y, 10, 4);
     const int d = pp.n_components;
     const int N1 = static_cast<int>(pp.x_norm.rows);
@@ -178,7 +177,7 @@ int main(int argc, char **argv)
         }
     }
 
-    // ---- 3. Train generators --------------------------------------------
+    // Train the hybrid quantum generator and the classical-GAN baseline.
     QGanConfig cfg;
     cfg.epochs = args.epochs;
     cfg.latent_dim = 4;
@@ -192,7 +191,7 @@ int main(int argc, char **argv)
     ClassicalGenerator cgen(cfg2.latent_dim, 24, d, rng, cfg2.lr_g);
     TrainHistory chist = train_qgan(cgen, real_tr, cfg2, rng);
 
-    // ---- 4. Generate synthetic fraud ------------------------------------
+    // Generate synthetic fraud from each trained generator.
     int n_eval = std::min(2000, std::max(200, N1));
     Matrix synth_q = generate(qgen, n_eval, d, rng);
     Matrix synth_c = generate(cgen, n_eval, d, rng);
@@ -207,7 +206,7 @@ int main(int argc, char **argv)
         }
     }
 
-    // ---- 5. Fidelity + detectability table ------------------------------
+    // Distributional fidelity and external detectability.
     FidelityReport f_s = evaluate_fidelity(real_ref, synth_s, rng);
     FidelityReport f_c = evaluate_fidelity(real_ref, synth_c, rng);
     FidelityReport f_q = evaluate_fidelity(real_ref, synth_q, rng);
@@ -223,9 +222,8 @@ int main(int argc, char **argv)
     prow("GAN", f_c);
     prow("Q-SYNTH", f_q);
 
-    // ---- 6. Downstream evaluation ---------------------------------------
-    // Split non-fraud into train/test, build a held-out real test set, and
-    // evaluate each augmentation on the same test set.
+    // Downstream evaluation: split non-fraud into train/test, hold out a real
+    // test set, and evaluate each augmentation on that same test set.
     std::shuffle(legit_pool.begin(), legit_pool.end(), rng.engine());
     int ln_tr = static_cast<int>(0.7 * legit_pool.size());
     std::vector<Vec> legit_tr(legit_pool.begin(), legit_pool.begin() + ln_tr);
@@ -283,7 +281,7 @@ int main(int argc, char **argv)
                     r.mlp.f1[1], r.mlp.auc);
     }
 
-    // ---- 7. Persist artifacts -------------------------------------------
+    // Persist artifacts.
     std::string mkdir = "mkdir -p " + args.out;
     if (std::system(mkdir.c_str()) != 0) {
         std::printf("warning: could not create output dir %s\n",
