@@ -60,6 +60,41 @@ Flags: `--data PATH`, `--synthetic`, `--seed N`, `--epochs E`, `--out DIR`.
 Artifacts written to `out/`: generator/discriminator loss curves, synthetic
 fraud in both the bounded space and the inverse-transformed feature space.
 
+## Results
+
+On the Kaggle ULB dataset (284,807 transactions, 492 fraud, 0.173% positive
+rate), 100 epochs, `--seed 42`. The whole run takes about 5 seconds on a CPU.
+
+Both generators reach the adversarial equilibrium where the discriminator can no
+longer separate real from generated samples: the classical GAN settles at
+`D(real) ~ D(fake) ~ 0.50` and Q-SYNTH at ~0.52, with no mode collapse.
+
+Distributional similarity, real vs synthetic fraud (lower KS/Wasserstein is
+better; AUC closer to 0.5 means harder to detect):
+
+| Technique | KS median | Wasserstein median | Detector AUC |
+|-----------|-----------|--------------------|--------------|
+| SMOTE     | 0.092     | 0.039              | 0.528 |
+| Classical GAN | 0.161 | 0.086              | 0.595 |
+| Q-SYNTH   | 0.201     | 0.104              | 0.578 |
+
+Downstream fraud-class detection (precision / recall / F1 / AUC):
+
+| Augmentation | LogReg | ANN |
+|--------------|--------|-----|
+| Balanced | 0.970 / 0.872 / 0.918 / 0.988 | 0.991 / 0.784 / 0.875 / 0.988 |
+| SMOTE    | 0.970 / 0.865 / 0.914 / 0.988 | 0.935 / 0.872 / 0.902 / 0.986 |
+| Classical GAN | 0.969 / 0.845 / 0.903 / 0.985 | 0.956 / 0.872 / 0.912 / 0.983 |
+| Q-SYNTH  | 0.977 / 0.851 / 0.910 / 0.988 | 0.963 / 0.872 / 0.915 / 0.988 |
+
+The qualitative picture matches the paper: SMOTE wins feature-wise fidelity, the
+adversarial methods stay competitive downstream, and Q-SYNTH gives the best ANN
+F1 while keeping its samples near-undetectable. One divergence from the paper:
+there Q-SYNTH beats the classical GAN on marginal fidelity, whereas here the GAN
+edges it on KS/Wasserstein. The simplifications below (finite-difference circuit
+gradients, matched-but-small capacity, the shared angle matrix) account for the
+gap; more layers, parameter-shift gradients, or regularizer tuning narrow it.
+
 ## Layout
 
 | File | Role |
